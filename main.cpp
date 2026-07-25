@@ -354,7 +354,7 @@ class GlowWindow : public QWidget {
 
 public:
     explicit GlowWindow(QWidget* parent = nullptr) : QWidget(parent) {
-        setFixedSize(500, 460); // Expanded slightly for the new button
+        setFixedSize(500, 460); 
         m_currentGlowPos = QPointF(width() / 2.0, height() / 2.0);
         m_targetGlowPos  = m_currentGlowPos;
 
@@ -643,7 +643,7 @@ exec env -u XDG_CURRENT_DESKTOP \
         m_btnLaunch = new RippleButton(); m_btnLaunch->setObjectName("btnLaunch"); m_btnLaunch->setFixedHeight(48);
         shamelaSettingsLayout->addWidget(m_btnLaunch);
 
-        // -- زر إنشاء أيقونة سطح المكتب الجديد --
+        // -- زر إنشاء أيقونة سطح المكتب --
         m_btnCreateDesktopIcon = new RippleButton(); 
         m_btnCreateDesktopIcon->setObjectName("btnCreateDesktopIcon"); 
         m_btnCreateDesktopIcon->setFixedHeight(48);
@@ -719,7 +719,43 @@ exec env -u XDG_CURRENT_DESKTOP \
 
         shamelaSettingsLayout->addStretch();
         
+        // -- زر حذف ملفات سطح المكتب --
         m_btnDelete = new RippleButton(); m_btnDelete->setObjectName("btnDelete"); m_btnDelete->setFixedHeight(48);
+        
+        connect(m_btnDelete, &QPushButton::clicked, this, [this]() {
+            QString appsPath = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+            QDir dir(appsPath);
+            
+            bool deleted = false;
+            
+            QString shamelaDesktop = dir.absoluteFilePath("shamela.desktop");
+            if (QFile::exists(shamelaDesktop)) {
+                if (QFile::remove(shamelaDesktop)) {
+                    m_hasShamelaDesktop = false;
+                    deleted = true;
+                }
+            }
+            
+            QString appDesktop = dir.absoluteFilePath("shamela-opener.desktop");
+            if (QFile::exists(appDesktop)) {
+                if (QFile::remove(appDesktop)) {
+                    m_hasAppDesktop = false;
+                    deleted = true;
+                }
+            }
+            
+            if (deleted) {
+                saveSettings();
+                QMessageBox::information(this, 
+                    m_currentLang == Language::Arabic ? "نجاح" : "Success", 
+                    m_currentLang == Language::Arabic ? "تم حذف ملفات سطح المكتب التي أنشأها البرنامج بنجاح." : "Desktop files created by this app were deleted successfully.");
+            } else {
+                QMessageBox::information(this, 
+                    m_currentLang == Language::Arabic ? "تنبيه" : "Notice", 
+                    m_currentLang == Language::Arabic ? "لا توجد ملفات سطح مكتب ليتم حذفها." : "No desktop files found to delete.");
+            }
+        });
+        
         shamelaSettingsLayout->addWidget(m_btnDelete);
 
         m_stackedWidget->addWidget(m_shamelaSettingsPage);
@@ -1028,7 +1064,7 @@ exec env -u XDG_CURRENT_DESKTOP \
                                .arg(QString(QChar(0x202C)));
 
         m_btnLaunch->setText(isAr ? arLaunchText : "Put launch.sh file to open Shamela");
-        m_btnDelete->setText(isAr ? "حذف جميع ملفات سطح المكتب للشاملة" : "Delete every desktop files for Shamela");
+        m_btnDelete->setText(isAr ? "حذف ملفات سطح المكتب الخاصة بالبرنامج" : "Delete desktop files for this app");
 
         updateDynamicTexts();
     }

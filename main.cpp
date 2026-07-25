@@ -632,10 +632,10 @@ exec env -u XDG_CURRENT_DESKTOP \
             if (themeDlg.exec() == QDialog::Accepted) {
                 int selection = themeDlg.selectedTheme;
                 
-                if (selection >= 0 && selection <= 5) {
+                if (selection >= 0 && selection <= 4) { // Updated index boundary
                     m_isCustomTheme = false;
                     applyTheme(static_cast<ThemeMode>(selection));
-                } else if (selection == 6) { 
+                } else if (selection == 5) {  // Custom is now index 5
                     CustomThemeDialog customDlg(m_colors, this);
                     customDlg.setStyleSheet(this->styleSheet());
                     
@@ -739,12 +739,12 @@ exec env -u XDG_CURRENT_DESKTOP \
             } else {
                 QString themeName;
                 switch(m_theme) {
-                    case ThemeMode::Mocha: themeName = "Mocha"; break;
                     case ThemeMode::Latte: themeName = "Latte"; break;
                     case ThemeMode::ShamelaClassic: themeName = "ShamelaClassic"; break;
-                    case ThemeMode::Dracula: themeName = "Dracula"; break;
                     case ThemeMode::Nord: themeName = "Nord"; break;
                     case ThemeMode::Gruvbox: themeName = "Gruvbox"; break;
+                    case ThemeMode::Mocha:
+                    default: themeName = "Mocha"; break; // Fallback to Mocha
                 }
                 out << "Theme=" << themeName << "\n";
             }
@@ -787,12 +787,11 @@ exec env -u XDG_CURRENT_DESKTOP \
                 }
                 else if (key == "Theme") {
                     if (val == "Custom") m_isCustomTheme = true;
-                    else if (val == "Mocha") m_theme = ThemeMode::Mocha;
                     else if (val == "Latte") m_theme = ThemeMode::Latte;
                     else if (val == "ShamelaClassic") m_theme = ThemeMode::ShamelaClassic;
-                    else if (val == "Dracula") m_theme = ThemeMode::Dracula;
                     else if (val == "Nord") m_theme = ThemeMode::Nord;
                     else if (val == "Gruvbox") m_theme = ThemeMode::Gruvbox;
+                    else m_theme = ThemeMode::Mocha; // Fallback for Mocha or any missing theme
                 }
                 else if (m_isCustomTheme) {
                     if (key == "Base") m_colors.Base = val;
@@ -816,12 +815,12 @@ exec env -u XDG_CURRENT_DESKTOP \
         m_isCustomTheme = false;
         
         switch(m_theme) {
-            case ThemeMode::Mocha:          m_colors = MochaTheme; break;
             case ThemeMode::Latte:          m_colors = LatteTheme; break;
             case ThemeMode::ShamelaClassic: m_colors = ShamelaClassicTheme; break;
-            case ThemeMode::Dracula:        m_colors = DraculaTheme; break;
             case ThemeMode::Nord:           m_colors = NordTheme; break;
             case ThemeMode::Gruvbox:        m_colors = GruvboxTheme; break;
+            case ThemeMode::Mocha:
+            default:                        m_colors = MochaTheme; break; // Fallback to Mocha
         }
 
         applyCurrentColors();
@@ -918,12 +917,12 @@ exec env -u XDG_CURRENT_DESKTOP \
             themeName = isAr ? "🎨 مخصص" : "🎨 Custom";
         } else {
             switch(m_theme) {
-                case ThemeMode::Mocha:          themeName = "☕ Mocha"; break;
                 case ThemeMode::Latte:          themeName = "☀️ Latte"; break;
                 case ThemeMode::ShamelaClassic: themeName = "📜 Shamela Classic"; break;
-                case ThemeMode::Dracula:        themeName = "🧛 Dracula"; break;
                 case ThemeMode::Nord:           themeName = "❄️ Nord"; break;
                 case ThemeMode::Gruvbox:        themeName = "📦 Gruvbox"; break;
+                case ThemeMode::Mocha:
+                default:                        themeName = "☕ Mocha"; break;
             }
         }
 

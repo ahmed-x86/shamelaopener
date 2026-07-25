@@ -6,7 +6,7 @@
 #include <QVBoxLayout>
 
 enum class Language { Arabic, English };
-enum class ThemeMode { Mocha, Latte, ShamelaClassic, Dracula, Nord, Gruvbox };
+enum class ThemeMode { Mocha, Latte, ShamelaClassic, Nord, Gruvbox };
 
 struct ThemeColors {
     QString Base, Text, Surface, Hover;
@@ -17,7 +17,6 @@ struct ThemeColors {
 extern const ThemeColors MochaTheme;
 extern const ThemeColors LatteTheme;
 extern const ThemeColors ShamelaClassicTheme;
-extern const ThemeColors DraculaTheme;
 extern const ThemeColors NordTheme;
 extern const ThemeColors GruvboxTheme;
 

@@ -1,5 +1,7 @@
 #include "theme.h"
 #include <QApplication>
+#include <QCoreApplication>
+#include <QStandardPaths>
 #include <QWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -31,6 +33,46 @@
 #include <QDir>
 #include <QFileInfo> 
 #include <QStringList>
+
+class DesktopIconChoiceDialog : public QDialog {
+    Q_OBJECT
+public:
+    enum Choice { Shamela, App, Cancel };
+    Choice resultChoice = Cancel;
+
+    explicit DesktopIconChoiceDialog(Language lang, QWidget* parent = nullptr) : QDialog(parent) {
+        bool isAr = (lang == Language::Arabic);
+        setWindowTitle(isAr ? "إنشاء أيقونة سطح المكتب" : "Create Desktop Icon");
+        setFixedSize(350, 160);
+        setLayoutDirection(isAr ? Qt::RightToLeft : Qt::LeftToRight);
+
+        auto* layout = new QVBoxLayout(this);
+        
+        auto* lbl = new QLabel(isAr ? "لأي برنامج تود إنشاء أيقونة؟" : "For which program do you want to create an icon?", this);
+        lbl->setAlignment(Qt::AlignCenter);
+        layout->addWidget(lbl);
+        
+        auto* btnShamela = new QPushButton(isAr ? "للشاملة" : "For Shamela", this);
+        btnShamela->setCursor(Qt::PointingHandCursor);
+        btnShamela->setFixedHeight(40);
+
+        auto* btnApp = new QPushButton(isAr ? "لهذا البرنامج" : "For this program", this);
+        btnApp->setCursor(Qt::PointingHandCursor);
+        btnApp->setFixedHeight(40);
+        
+        layout->addWidget(btnShamela);
+        layout->addWidget(btnApp);
+        
+        connect(btnShamela, &QPushButton::clicked, this, [this](){
+            resultChoice = Shamela;
+            accept();
+        });
+        connect(btnApp, &QPushButton::clicked, this, [this](){
+            resultChoice = App;
+            accept();
+        });
+    }
+};
 
 class DownloadChoiceDialog : public QDialog {
     Q_OBJECT
@@ -312,7 +354,7 @@ class GlowWindow : public QWidget {
 
 public:
     explicit GlowWindow(QWidget* parent = nullptr) : QWidget(parent) {
-        setFixedSize(500, 390);
+        setFixedSize(500, 460); // Expanded slightly for the new button
         m_currentGlowPos = QPointF(width() / 2.0, height() / 2.0);
         m_targetGlowPos  = m_currentGlowPos;
 
@@ -599,10 +641,85 @@ exec env -u XDG_CURRENT_DESKTOP \
         shamelaSettingsLayout->addLayout(midRow);
 
         m_btnLaunch = new RippleButton(); m_btnLaunch->setObjectName("btnLaunch"); m_btnLaunch->setFixedHeight(48);
-        m_btnDelete = new RippleButton(); m_btnDelete->setObjectName("btnDelete"); m_btnDelete->setFixedHeight(48);
-
         shamelaSettingsLayout->addWidget(m_btnLaunch);
+
+        // -- زر إنشاء أيقونة سطح المكتب الجديد --
+        m_btnCreateDesktopIcon = new RippleButton(); 
+        m_btnCreateDesktopIcon->setObjectName("btnCreateDesktopIcon"); 
+        m_btnCreateDesktopIcon->setFixedHeight(48);
+        
+        connect(m_btnCreateDesktopIcon, &QPushButton::clicked, this, [this]() {
+            DesktopIconChoiceDialog choiceDlg(m_currentLang, this);
+            choiceDlg.setStyleSheet(this->styleSheet()); 
+            
+            if (choiceDlg.exec() == QDialog::Accepted) {
+                QString appsPath = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+                QDir dir(appsPath);
+                if (!dir.exists()) dir.mkpath(".");
+                
+                if (choiceDlg.resultChoice == DesktopIconChoiceDialog::Shamela) {
+                    if (m_shamelaPath.isEmpty() || !QFile::exists(m_shamelaPath)) {
+                        QMessageBox::warning(this, m_currentLang == Language::Arabic ? "خطأ" : "Error", 
+                                             m_currentLang == Language::Arabic ? "مسار الشاملة غير محدد أو غير موجود!" : "Shamela path is not set or not found!");
+                        return;
+                    }
+                    QString desktopFilePath = dir.absoluteFilePath("shamela.desktop");
+                    QFile dFile(desktopFilePath);
+                    if (dFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                        QTextStream out(&dFile);
+                        out << "[Desktop Entry]\n"
+                            << "Version=1.0\n"
+                            << "Name=المكتبة الشاملة\n"
+                            << "Name[en]=Shamela Library\n"
+                            << "Comment=فتح المكتبة الشاملة\n"
+                            << "Exec=\"" << m_shamelaPath << "\"\n"
+                            << "Icon=accessories-dictionary\n"
+                            << "Terminal=false\n"
+                            << "Type=Application\n"
+                            << "Categories=Education;Literature;\n";
+                        dFile.close();
+                        dFile.setPermissions(dFile.permissions() | QFileDevice::ExeOwner | QFileDevice::ExeGroup | QFileDevice::ExeOther | QFileDevice::ReadOwner | QFileDevice::ReadUser | QFileDevice::ReadGroup | QFileDevice::ReadOther);
+                        m_hasShamelaDesktop = true;
+                        saveSettings();
+                        QMessageBox::information(this, m_currentLang == Language::Arabic ? "نجاح" : "Success", 
+                                                 m_currentLang == Language::Arabic ? "تم إنشاء أيقونة الشاملة بنجاح في مجلد التطبيقات." : "Shamela desktop icon created successfully.");
+                    } else {
+                        QMessageBox::critical(this, "خطأ", "فشل إنشاء ملف الأيقونة!");
+                    }
+                } else if (choiceDlg.resultChoice == DesktopIconChoiceDialog::App) {
+                    QString appPath = QCoreApplication::applicationFilePath();
+                    QString desktopFilePath = dir.absoluteFilePath("shamela-opener.desktop");
+                    QFile dFile(desktopFilePath);
+                    if (dFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                        QTextStream out(&dFile);
+                        out << "[Desktop Entry]\n"
+                            << "Version=1.0\n"
+                            << "Name=فاتح الشاملة\n"
+                            << "Name[en]=Shamela Opener\n"
+                            << "Comment=أداة لتثبيت وتشغيل المكتبة الشاملة\n"
+                            << "Exec=\"" << appPath << "\"\n"
+                            << "Icon=system-run\n"
+                            << "Terminal=false\n"
+                            << "Type=Application\n"
+                            << "Categories=Utility;\n";
+                        dFile.close();
+                        dFile.setPermissions(dFile.permissions() | QFileDevice::ExeOwner | QFileDevice::ExeGroup | QFileDevice::ExeOther | QFileDevice::ReadOwner | QFileDevice::ReadUser | QFileDevice::ReadGroup | QFileDevice::ReadOther);
+                        m_hasAppDesktop = true;
+                        saveSettings();
+                        QMessageBox::information(this, m_currentLang == Language::Arabic ? "نجاح" : "Success", 
+                                                 m_currentLang == Language::Arabic ? "تم إنشاء أيقونة هذا البرنامج بنجاح في مجلد التطبيقات." : "App desktop icon created successfully.");
+                    } else {
+                        QMessageBox::critical(this, "خطأ", "فشل إنشاء ملف الأيقونة!");
+                    }
+                }
+            }
+        });
+        
+        shamelaSettingsLayout->addWidget(m_btnCreateDesktopIcon);
+
         shamelaSettingsLayout->addStretch();
+        
+        m_btnDelete = new RippleButton(); m_btnDelete->setObjectName("btnDelete"); m_btnDelete->setFixedHeight(48);
         shamelaSettingsLayout->addWidget(m_btnDelete);
 
         m_stackedWidget->addWidget(m_shamelaSettingsPage);
@@ -632,10 +749,10 @@ exec env -u XDG_CURRENT_DESKTOP \
             if (themeDlg.exec() == QDialog::Accepted) {
                 int selection = themeDlg.selectedTheme;
                 
-                if (selection >= 0 && selection <= 4) { // Updated index boundary
+                if (selection >= 0 && selection <= 4) { 
                     m_isCustomTheme = false;
                     applyTheme(static_cast<ThemeMode>(selection));
-                } else if (selection == 5) {  // Custom is now index 5
+                } else if (selection == 5) {  
                     CustomThemeDialog customDlg(m_colors, this);
                     customDlg.setStyleSheet(this->styleSheet());
                     
@@ -723,6 +840,8 @@ exec env -u XDG_CURRENT_DESKTOP \
             
             out << "Path=" << m_shamelaPath << "\n";
             out << "Language=" << (m_currentLang == Language::Arabic ? "Arabic" : "English") << "\n";
+            out << "HasShamelaDesktop=" << (m_hasShamelaDesktop ? "1" : "0") << "\n";
+            out << "HasAppDesktop=" << (m_hasAppDesktop ? "1" : "0") << "\n";
             
             if (m_isCustomTheme) {
                 out << "Theme=Custom\n";
@@ -744,7 +863,7 @@ exec env -u XDG_CURRENT_DESKTOP \
                     case ThemeMode::Nord: themeName = "Nord"; break;
                     case ThemeMode::Gruvbox: themeName = "Gruvbox"; break;
                     case ThemeMode::Mocha:
-                    default: themeName = "Mocha"; break; // Fallback to Mocha
+                    default: themeName = "Mocha"; break; 
                 }
                 out << "Theme=" << themeName << "\n";
             }
@@ -760,6 +879,8 @@ exec env -u XDG_CURRENT_DESKTOP \
         m_theme = ThemeMode::Mocha;
         m_isCustomTheme = false;
         m_shamelaPath = "";
+        m_hasShamelaDesktop = false;
+        m_hasAppDesktop = false;
 
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             QTextStream in(&file);
@@ -785,13 +906,15 @@ exec env -u XDG_CURRENT_DESKTOP \
                     if (val == "English") m_currentLang = Language::English;
                     else m_currentLang = Language::Arabic;
                 }
+                else if (key == "HasShamelaDesktop") m_hasShamelaDesktop = (val == "1");
+                else if (key == "HasAppDesktop") m_hasAppDesktop = (val == "1");
                 else if (key == "Theme") {
                     if (val == "Custom") m_isCustomTheme = true;
                     else if (val == "Latte") m_theme = ThemeMode::Latte;
                     else if (val == "ShamelaClassic") m_theme = ThemeMode::ShamelaClassic;
                     else if (val == "Nord") m_theme = ThemeMode::Nord;
                     else if (val == "Gruvbox") m_theme = ThemeMode::Gruvbox;
-                    else m_theme = ThemeMode::Mocha; // Fallback for Mocha or any missing theme
+                    else m_theme = ThemeMode::Mocha;
                 }
                 else if (m_isCustomTheme) {
                     if (key == "Base") m_colors.Base = val;
@@ -820,7 +943,7 @@ exec env -u XDG_CURRENT_DESKTOP \
             case ThemeMode::Nord:           m_colors = NordTheme; break;
             case ThemeMode::Gruvbox:        m_colors = GruvboxTheme; break;
             case ThemeMode::Mocha:
-            default:                        m_colors = MochaTheme; break; // Fallback to Mocha
+            default:                        m_colors = MochaTheme; break; 
         }
 
         applyCurrentColors();
@@ -856,8 +979,8 @@ exec env -u XDG_CURRENT_DESKTOP \
             QPushButton#btnArchive { background: %3; color: %5; }
             QPushButton#btnArchive:hover { background: %5; color: %2; }
             
-            QPushButton#btnFolder { background: %3; color: %6; }
-            QPushButton#btnFolder:hover { background: %6; color: %2; }
+            QPushButton#btnFolder, QPushButton#btnCreateDesktopIcon { background: %3; color: %6; }
+            QPushButton#btnFolder:hover, QPushButton#btnCreateDesktopIcon:hover { background: %6; color: %2; }
 
             QPushButton#btnOpen { background: %3; color: %7; }
             QPushButton#btnOpen:hover { background: %7; color: %2; }
@@ -897,6 +1020,7 @@ exec env -u XDG_CURRENT_DESKTOP \
         
         m_btnFolder->setText(isAr ? "تحديد مسار الملف" : "Set File Path");
         m_btnOpen->setText(isAr ? "فتح الشاملة" : "Open Shamela");
+        m_btnCreateDesktopIcon->setText(isAr ? "اصنع أيقونة سطح المكتب" : "Create Desktop Icon");
         
         QString arLaunchText = QString("%1ضع ملف %2launch.sh%3 لفتح الشاملة%3")
                                .arg(QString(QChar(0x202B)))
@@ -940,6 +1064,8 @@ exec env -u XDG_CURRENT_DESKTOP \
     ThemeColors m_colors;
     bool m_isCustomTheme = false;
     Language m_currentLang;
+    bool m_hasShamelaDesktop = false;
+    bool m_hasAppDesktop = false;
     
     bool m_isSidebarOpen = false;
     QWidget *m_sidebar{};
@@ -950,7 +1076,7 @@ exec env -u XDG_CURRENT_DESKTOP \
     QPushButton *m_hamburgerBtn{};
     
     RippleButton *m_btnNavMain{}, *m_btnNavShamelaSettings{}, *m_btnNavSettings{};
-    RippleButton *m_btnDownload{}, *m_btnCheckDeps{}, *m_btnArchive{}, *m_btnFolder{}, *m_btnOpen{}, *m_btnLaunch{}, *m_btnDelete{};
+    RippleButton *m_btnDownload{}, *m_btnCheckDeps{}, *m_btnArchive{}, *m_btnFolder{}, *m_btnOpen{}, *m_btnLaunch{}, *m_btnCreateDesktopIcon{}, *m_btnDelete{};
     RippleButton *m_btnToggleLang{}, *m_btnToggleTheme{};
 };
 

@@ -1,2 +1,2 @@
-set(__QT_DEPLOY_TARGET_ShamelaOpener_FILE /mnt/data/github_repos/shamela-qt/ShamelaOpener)
+set(__QT_DEPLOY_TARGET_ShamelaOpener_FILE /mnt/data/github_repos/shamelaopener/ShamelaOpener)
 set(__QT_DEPLOY_TARGET_ShamelaOpener_TYPE EXECUTABLE)

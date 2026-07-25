@@ -25,12 +25,6 @@ const ThemeColors ShamelaClassicTheme = {
     false
 };
 
-const ThemeColors DraculaTheme = {
-    "#282a36", "#f8f8f2", "#44475a", "#6272a4",
-    "#bd93f9", "#ff79c6", "#8be9fd", "#50fa7b", "#ff5555",
-    true
-};
-
 const ThemeColors NordTheme = {
     "#2e3440", "#d8dee9", "#3b4252", "#434c5e",
     "#88c0d0", "#81a1c1", "#5e81ac", "#a3be8c", "#bf616a",
@@ -56,7 +50,6 @@ ThemeSelectionDialog::ThemeSelectionDialog(Language lang, QWidget* parent) : QDi
         "☕ Mocha", 
         "☀️ Latte", 
         "📜 Shamela Classic", 
-        "🧛 Dracula", 
         "❄️ Nord", 
         "📦 Gruvbox", 
         lang == Language::Arabic ? "🎨 مخصص (Custom)" : "🎨 Custom"

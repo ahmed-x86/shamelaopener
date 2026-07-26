@@ -807,6 +807,37 @@ exec env -u XDG_CURRENT_DESKTOP \
         m_stackedWidget->addWidget(m_settingsPage);
 
         root->addWidget(m_stackedWidget);
+
+        auto *footerLayout = new QHBoxLayout();
+        footerLayout->setAlignment(Qt::AlignCenter);
+        footerLayout->setSpacing(15);
+
+        auto *githubBtn = new QPushButton("GitHub");
+        githubBtn->setObjectName("btnLink");
+        githubBtn->setCursor(Qt::PointingHandCursor);
+        connect(githubBtn, &QPushButton::clicked, [](){
+            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener"));
+        });
+
+        auto *issueBtn = new QPushButton("Issues");
+        issueBtn->setObjectName("btnLink");
+        issueBtn->setCursor(Qt::PointingHandCursor);
+        connect(issueBtn, &QPushButton::clicked, [](){
+            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener/issues"));
+        });
+
+        auto *releaseBtn = new QPushButton("Releases");
+        releaseBtn->setObjectName("btnLink");
+        releaseBtn->setCursor(Qt::PointingHandCursor);
+        connect(releaseBtn, &QPushButton::clicked, [](){
+            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener/releases"));
+        });
+
+        footerLayout->addWidget(githubBtn);
+        footerLayout->addWidget(issueBtn);
+        footerLayout->addWidget(releaseBtn);
+        
+        root->addLayout(footerLayout);
     }
 
     void buildSidebar() {
@@ -1029,6 +1060,9 @@ exec env -u XDG_CURRENT_DESKTOP \
 
             QPushButton#btnSetting { background: %3; color: %1; }
             QPushButton#btnSetting:hover { background: %4; }
+
+            QPushButton#btnLink { background: transparent; color: %1; font-weight: bold; padding: 4px; border: none; }
+            QPushButton#btnLink:hover { color: %5; text-decoration: underline; }
         )")
         .arg(m_colors.Text, m_colors.Base, m_colors.Surface, m_colors.Hover)
         .arg(m_colors.Accent1, m_colors.Accent2, m_colors.Accent3, m_colors.Accent4, m_colors.Danger);
@@ -1117,6 +1151,7 @@ exec env -u XDG_CURRENT_DESKTOP \
 };
 
 int main(int argc, char* argv[]) {
+    // إجبار Qt على استخدام بوابات سطح المكتب (xdg-desktop-portal) لتشغيل مدير ملفات النظام الأصلي
     qputenv("QT_QPA_PLATFORMTHEME", "xdgdesktopportal");
 
     QApplication app(argc, argv);

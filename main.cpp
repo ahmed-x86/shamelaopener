@@ -1117,6 +1117,8 @@ exec env -u XDG_CURRENT_DESKTOP \
 };
 
 int main(int argc, char* argv[]) {
+    qputenv("QT_QPA_PLATFORMTHEME", "xdgdesktopportal");
+
     QApplication app(argc, argv);
     app.setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, true);
 

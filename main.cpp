@@ -474,6 +474,38 @@ private:
 
         mainLayout->addWidget(m_btnOpen, 0, Qt::AlignCenter);
         mainLayout->addStretch();
+
+        auto *footerLayout = new QHBoxLayout();
+        footerLayout->setAlignment(Qt::AlignCenter);
+        footerLayout->setSpacing(15);
+
+        auto *githubBtn = new QPushButton("GitHub");
+        githubBtn->setObjectName("btnLink");
+        githubBtn->setCursor(Qt::PointingHandCursor);
+        connect(githubBtn, &QPushButton::clicked, [](){
+            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener"));
+        });
+
+        auto *issueBtn = new QPushButton("Issues");
+        issueBtn->setObjectName("btnLink");
+        issueBtn->setCursor(Qt::PointingHandCursor);
+        connect(issueBtn, &QPushButton::clicked, [](){
+            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener/issues"));
+        });
+
+        auto *releaseBtn = new QPushButton("Releases");
+        releaseBtn->setObjectName("btnLink");
+        releaseBtn->setCursor(Qt::PointingHandCursor);
+        connect(releaseBtn, &QPushButton::clicked, [](){
+            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener/releases"));
+        });
+
+        footerLayout->addWidget(githubBtn);
+        footerLayout->addWidget(issueBtn);
+        footerLayout->addWidget(releaseBtn);
+        
+        mainLayout->addLayout(footerLayout);
+        
         m_stackedWidget->addWidget(m_mainMenuPage);
 
         m_shamelaSettingsPage = new QWidget(this);
@@ -807,37 +839,6 @@ exec env -u XDG_CURRENT_DESKTOP \
         m_stackedWidget->addWidget(m_settingsPage);
 
         root->addWidget(m_stackedWidget);
-
-        auto *footerLayout = new QHBoxLayout();
-        footerLayout->setAlignment(Qt::AlignCenter);
-        footerLayout->setSpacing(15);
-
-        auto *githubBtn = new QPushButton("GitHub");
-        githubBtn->setObjectName("btnLink");
-        githubBtn->setCursor(Qt::PointingHandCursor);
-        connect(githubBtn, &QPushButton::clicked, [](){
-            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener"));
-        });
-
-        auto *issueBtn = new QPushButton("Issues");
-        issueBtn->setObjectName("btnLink");
-        issueBtn->setCursor(Qt::PointingHandCursor);
-        connect(issueBtn, &QPushButton::clicked, [](){
-            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener/issues"));
-        });
-
-        auto *releaseBtn = new QPushButton("Releases");
-        releaseBtn->setObjectName("btnLink");
-        releaseBtn->setCursor(Qt::PointingHandCursor);
-        connect(releaseBtn, &QPushButton::clicked, [](){
-            QDesktopServices::openUrl(QUrl("https://github.com/ahmed-x86/shamelaopener/releases"));
-        });
-
-        footerLayout->addWidget(githubBtn);
-        footerLayout->addWidget(issueBtn);
-        footerLayout->addWidget(releaseBtn);
-        
-        root->addLayout(footerLayout);
     }
 
     void buildSidebar() {
